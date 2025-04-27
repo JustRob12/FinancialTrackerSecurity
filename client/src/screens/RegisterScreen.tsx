@@ -8,11 +8,13 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import FormInput from '../components/FormInput';
 import Button from '../components/Button';
 import { theme } from '../styles/theme';
 import { AuthScreenProps } from '../types/navigation';
+import { AuthService } from '../services/api';
 
 const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -47,8 +49,8 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     if (!confirmPassword) {
@@ -65,12 +67,34 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     if (!validateForm()) return;
     
     setLoading(true);
-    // This would be where you'd call your registration API
-    setTimeout(() => {
+    
+    try {
+      const response = await AuthService.register({
+        full_name: name,
+        email,
+        password,
+        confirm_password: confirmPassword,
+      });
+      
+      if (response.success && response.data) {
+        Alert.alert(
+          'Registration Successful',
+          'Your account has been created! You can now log in.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('Login')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Registration Failed', response.error || 'An unknown error occurred');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to connect to the server. Please try again.');
+    } finally {
       setLoading(false);
-      alert('Registration successful! Please check your email to verify your account.');
-      navigation.navigate('Login');
-    }, 1500);
+    }
   };
 
   return (

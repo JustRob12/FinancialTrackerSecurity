@@ -9,11 +9,13 @@ import {
   ScrollView,
   Image,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import FormInput from '../components/FormInput';
 import Button from '../components/Button';
 import { theme } from '../styles/theme';
 import { AuthScreenProps } from '../types/navigation';
+import { AuthService } from '../services/api';
 
 const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -44,12 +46,26 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     if (!validateForm()) return;
     
     setLoading(true);
-    // This would be where you'd call your login API
-    setTimeout(() => {
+    
+    try {
+      const response = await AuthService.login({ email, password });
+      
+      if (response.success && response.data) {
+        // Store token and user data in secure storage
+        // This would typically be done with a library like expo-secure-store
+        // For now, we'll just show a success message
+        Alert.alert('Success', 'Login successful!');
+        
+        // Navigate to main app screen
+        // navigation.navigate('Home');
+      } else {
+        Alert.alert('Login Failed', response.error || 'An unknown error occurred');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to connect to the server. Please try again.');
+    } finally {
       setLoading(false);
-      // Normally you would navigate to the main app here after successful login
-      alert('Login successful!');
-    }, 1500);
+    }
   };
 
   return (
