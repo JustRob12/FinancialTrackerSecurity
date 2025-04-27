@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -14,20 +14,29 @@ import FormInput from '../components/FormInput';
 import Button from '../components/Button';
 import { theme } from '../styles/theme';
 import { AuthScreenProps } from '../types/navigation';
-import { AuthService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{
+  const [formErrors, setFormErrors] = useState<{
     name?: string;
     email?: string;
     password?: string;
     confirmPassword?: string;
   }>({});
+
+  // Get auth context
+  const { register, isLoading, error } = useAuth();
+
+  // Show auth errors
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Registration Error', error);
+    }
+  }, [error]);
 
   const validateForm = () => {
     const newErrors: {
@@ -59,41 +68,27 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleRegister = async () => {
     if (!validateForm()) return;
     
-    setLoading(true);
+    const success = await register(name, email, password, confirmPassword);
     
-    try {
-      const response = await AuthService.register({
-        full_name: name,
-        email,
-        password,
-        confirm_password: confirmPassword,
-      });
-      
-      if (response.success && response.data) {
-        Alert.alert(
-          'Registration Successful',
-          'Your account has been created! You can now log in.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login')
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Registration Failed', response.error || 'An unknown error occurred');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to connect to the server. Please try again.');
-    } finally {
-      setLoading(false);
+    if (success) {
+      Alert.alert(
+        'Registration Successful',
+        'Your account has been created! You will now be logged in.',
+        [
+          {
+            text: 'OK',
+            // This would navigate to Home in a real app after registration
+            // onPress: () => navigation.navigate('Home')
+          }
+        ]
+      );
     }
   };
 
@@ -119,7 +114,7 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
-              error={errors.name}
+              error={formErrors.name}
             />
             
             <FormInput 
@@ -129,7 +124,7 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              error={errors.email}
+              error={formErrors.email}
             />
             
             <FormInput 
@@ -138,7 +133,7 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              error={errors.password}
+              error={formErrors.password}
             />
             
             <FormInput 
@@ -147,13 +142,13 @@ const RegisterScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
-              error={errors.confirmPassword}
+              error={formErrors.confirmPassword}
             />
             
             <Button 
               title="Create Account" 
               onPress={handleRegister} 
-              loading={loading}
+              loading={isLoading}
             />
           </View>
           

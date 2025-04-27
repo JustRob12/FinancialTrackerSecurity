@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -15,13 +15,22 @@ import FormInput from '../components/FormInput';
 import Button from '../components/Button';
 import { theme } from '../styles/theme';
 import { AuthScreenProps } from '../types/navigation';
-import { AuthService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [formErrors, setFormErrors] = useState<{email?: string; password?: string}>({});
+  
+  // Get auth context
+  const { login, isLoading, error } = useAuth();
+  
+  // Show auth errors
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Login Error', error);
+    }
+  }, [error]);
 
   const validateForm = () => {
     const newErrors: {email?: string; password?: string} = {};
@@ -38,33 +47,20 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
-    setErrors(newErrors);
+    setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleLogin = async () => {
     if (!validateForm()) return;
     
-    setLoading(true);
+    const success = await login(email, password);
     
-    try {
-      const response = await AuthService.login({ email, password });
-      
-      if (response.success && response.data) {
-        // Store token and user data in secure storage
-        // This would typically be done with a library like expo-secure-store
-        // For now, we'll just show a success message
-        Alert.alert('Success', 'Login successful!');
-        
-        // Navigate to main app screen
-        // navigation.navigate('Home');
-      } else {
-        Alert.alert('Login Failed', response.error || 'An unknown error occurred');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to connect to the server. Please try again.');
-    } finally {
-      setLoading(false);
+    if (success) {
+      // Navigate to Home screen or show success message
+      Alert.alert('Success', 'You have successfully logged in!');
+      // This would normally navigate to Home or Dashboard
+      // navigation.navigate('Home');
     }
   };
 
@@ -91,7 +87,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              error={errors.email}
+              error={formErrors.email}
             />
             
             <FormInput 
@@ -100,7 +96,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              error={errors.password}
+              error={formErrors.password}
             />
             
             <TouchableOpacity style={styles.forgotPassword}>
@@ -110,7 +106,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <Button 
               title="Log In" 
               onPress={handleLogin} 
-              loading={loading}
+              loading={isLoading}
             />
           </View>
           

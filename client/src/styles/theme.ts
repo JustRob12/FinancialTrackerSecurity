@@ -38,4 +38,4 @@ export const theme = {
     medium: '500' as const,
     bold: 'bold' as const,
   },
-}; 
+};

@@ -5,7 +5,7 @@
 
 // You can find this by running 'ipconfig' on Windows or 'ifconfig' on Mac/Linux
 // Example: 192.168.1.5, 10.0.0.4, etc.
-export const API_HOST = '192.168.0.100'; // Replace with your actual IP address
+export const API_HOST = '192.168.1.7'; // Updated with your actual IP address
 export const API_PORT = 5000;
 export const API_URL = `http://${API_HOST}:${API_PORT}/api`;
 
